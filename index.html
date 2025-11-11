@@ -3,571 +3,687 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Airdrop Tracker & Wallet Analyzer - Single File</title>
-  <!-- Ethers.js CDN -->
+  <title>Airdrop Tracker & Wallet Analyzer — Live (API-free)</title>
+
+  <!-- Ethers.js v6 CDN -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.3/dist/ethers.min.js"></script>
+
   <style>
-    /* Simple modern styling */
     :root{
-      --bg:#0f1724;
-      --card:#0b1220;
-      --muted:#94a3b8;
-      --accent:#00d1b2;
-      --danger:#ff6961;
-      --glass: rgba(255,255,255,0.03);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      --bg:#071025; --card:#0b1320; --muted:#98a8bf; --accent:#00d4b2; --glass:rgba(255,255,255,0.02);
+      font-family: Inter, Roboto, "Segoe UI", Arial, sans-serif;
     }
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,#081026 0%, #071827 100%);color:#e6eef6}
-    .wrap{max-width:1100px;margin:28px auto;padding:20px;}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-    header h1{font-size:20px;margin:0}
-    .row{display:flex;gap:16px;flex-wrap:wrap}
-    .card{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(5,8,15,0.6);flex:1;min-width:260px}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#06101d 0%, #071827 100%);color:#e6eef6}
+    .wrap{max-width:1200px;margin:22px auto;padding:18px;}
+    header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px}
+    h1{font-size:20px;margin:0}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.6);flex:1;min-width:280px}
     label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    input,select,textarea,button{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;font-size:14px}
-    button{cursor:pointer;border:none}
-    .small{font-size:13px;color:var(--muted)}
-    .muted{color:var(--muted)}
-    .actions{display:flex;gap:10px;margin-top:10px}
-    .btn-primary{background:linear-gradient(90deg,var(--accent),#00bfa0);color:#012;box-shadow:0 6px 16px rgba(0,209,178,0.12)}
+    input,select,textarea,button{width:100%;padding:10px;border-radius:9px;border:1px solid rgba(255,255,255,0.03);background:var(--glass);color:inherit;font-size:14px}
+    button{cursor:pointer}
+    .btn{display:inline-block;padding:8px 12px;border-radius:9px;background:linear-gradient(90deg,var(--accent),#00bfa0);color:#012;border:none}
     .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
-    .result{margin-top:12px;padding:12px;background:rgba(255,255,255,0.02);border-radius:8px;font-family:monospace;font-size:13px}
-    .list{margin-top:8px;max-height:240px;overflow:auto}
-    .token{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:6px;border-bottom:1px dashed rgba(255,255,255,0.02)}
-    .tag{font-size:12px;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,0.03)}
-    footer{font-size:13px;color:var(--muted);margin-top:18px;text-align:center}
-    .admin-badge{background:#111827;padding:6px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
-    .grid-2{display:grid;grid-template-columns:1fr 320px;gap:16px}
-    @media(max-width:900px){.grid-2{grid-template-columns:1fr}}
-    .warn{color:var(--danger);font-weight:600}
-    .success{color:#7ef0c6;font-weight:600}
-    .log{font-family:monospace;font-size:13px;background:rgba(0,0,0,0.12);padding:8px;border-radius:6px;max-height:180px;overflow:auto}
+    .muted{color:var(--muted);font-size:13px}
+    .small{font-size:13px;color:var(--muted)}
+    .grid-2{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+    @media(max-width:980px){.grid-2{grid-template-columns:1fr}}
+    .result{margin-top:10px;background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;font-family:monospace;font-size:13px}
+    .tokens{margin-top:10px;max-height:360px;overflow:auto}
+    .token-row{display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px dashed rgba(255,255,255,0.02)}
+    .tag{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:13px}
+    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+    .progress{height:10px;background:rgba(255,255,255,0.03);border-radius:6px;overflow:hidden}
+    .progress > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#00d4b2,#00a3c4)}
+    .log{font-family:monospace;font-size:12px;background:rgba(0,0,0,0.12);padding:8px;border-radius:6px;max-height:150px;overflow:auto}
+    .controls{display:flex;gap:8px}
+    .inline{display:inline-block;width:auto}
+    .warn{color:#ff7b7b}
+    .success{color:#8ef3cf}
     .hidden{display:none}
-    .flex{display:flex;gap:8px;align-items:center}
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <h1>Airdrop Tracker & Wallet Analyzer</h1>
-      <div class="admin-badge">Admin: <span id="adminState">Not set</span></div>
+      <div>
+        <h1>Airdrop Tracker & Wallet Analyzer — Live (API-free)</h1>
+        <div class="small muted">EVM chains, ERC-20 detection by scanning on-chain Transfer logs — no external APIs required.</div>
+      </div>
+      <div style="text-align:right">
+        <div class="small muted">Admin: <span id="adminState">Not set</span></div>
+        <div style="margin-top:6px">
+          <button id="connectWallet" class="btn-ghost inline">Connect MetaMask</button>
+        </div>
+      </div>
     </header>
 
     <div class="grid-2">
-      <!-- Left: Main app -->
-      <div>
+      <!-- MAIN -->
+      <main>
         <div class="card">
-          <label>Wallet Address or ENS</label>
-          <input id="inputAddress" placeholder="0x1234... or alice.eth" />
+          <label>Address or ENS (leave empty to use connected wallet)</label>
+          <input id="inputAddress" placeholder="0x... or alice.eth (optional)" />
           <div style="display:flex;gap:8px;margin-top:10px">
             <select id="selectNetwork">
-              <option value="ethereum">Ethereum Mainnet</option>
+              <option value="ethereum">Ethereum Mainnet (cloudflare)</option>
               <option value="sepolia">Sepolia (testnet)</option>
-              <option value="polygon">Polygon</option>
+              <option value="polygon">Polygon (public)</option>
             </select>
-            <button class="btn-primary" id="btnAnalyze">Analyze</button>
-            <button class="btn-ghost" id="btnClear">Clear</button>
+            <button id="btnAnalyze" class="btn">Analyze</button>
+            <button id="btnClear" class="btn-ghost">Reset</button>
           </div>
-          <div class="result" id="basicResult">
-            <div class="small">Status: <span id="status">Idle</span></div>
-            <div style="margin-top:8px">
-              <div><strong>Address:</strong> <span id="outAddress">—</span></div>
-              <div><strong>ENS / Name:</strong> <span id="outENS">—</span></div>
-              <div><strong>Native Balance:</strong> <span id="outBalance">—</span></div>
-              <div><strong>Recent Heuristic:</strong> <span id="outHeu">—</span></div>
-            </div>
+
+          <div class="result" id="basicResult" style="margin-top:12px">
+            <div><strong>Resolved Address:</strong> <span id="outAddress">—</span></div>
+            <div><strong>ENS / Name:</strong> <span id="outENS">—</span></div>
+            <div><strong>Network:</strong> <span id="outNetwork">—</span></div>
+            <div><strong>Native Balance:</strong> <span id="outNative">—</span></div>
+            <div><strong>Activity:</strong> <span id="outActivity">—</span></div>
           </div>
         </div>
 
         <div class="card" style="margin-top:12px">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <strong>Token Balances & Heuristics</strong>
-            <div class="small muted">Advanced mode uses Covalent / Etherscan keys</div>
+            <strong>Token Discovery & Balances</strong>
+            <div class="small muted">Scan recent logs to find ERC-20 tokens (no APIs)</div>
+          </div>
+
+          <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+            <label class="small" style="width:140px">Scan depth (blocks)</label>
+            <input id="scanDepth" type="number" value="10000" style="width:120px" />
+            <div style="flex:1"></div>
+            <div class="inline controls">
+              <button id="btnDiscover" class="btn">Discover Tokens</button>
+              <button id="btnRefreshBalances" class="btn-ghost">Refresh Balances</button>
+            </div>
           </div>
 
           <div style="margin-top:10px">
-            <label>Optional: Covalent API Key (for full token list)</label>
-            <input id="covalentKey" placeholder="Covalent API key (optional)" />
-            <label style="margin-top:8px">Optional: Etherscan API Key (for tx history)</label>
-            <input id="etherscanKey" placeholder="Etherscan / Polygonscan API key (optional)" />
-            <div class="actions">
-              <button id="btnFetchTokens" class="btn-primary">Fetch Token Balances</button>
-              <button id="btnTxs" class="btn-ghost">Fetch Recent TXs</button>
-            </div>
-            <div class="list" id="tokensList"></div>
+            <div class="progress hidden" id="progressBar"><i></i></div>
+            <div class="small muted" id="progressText">Waiting...</div>
+          </div>
+
+          <div class="tokens" id="tokensRoot"></div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button id="exportCSV" class="btn-ghost">Export CSV</button>
+            <button id="exportJSON" class="btn-ghost">Export JSON</button>
+            <button id="btnAddTokenManual" class="btn-ghost">Add Custom Token</button>
           </div>
         </div>
 
         <div class="card" style="margin-top:12px">
-          <strong>Simple Airdrop Heuristics</strong>
-          <p class="small muted">These are heuristic rules — not a guarantee. Use API keys for more accurate checks.</p>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="runHeuristics" class="btn-primary">Run Heuristics</button>
-            <button id="exportCSV" class="btn-ghost">Export CSV</button>
+          <strong>Heuristics & Signals</strong>
+          <p class="small muted">Simple rules to suggest potential airdrop eligibility.</p>
+          <div style="display:flex;gap:8px">
+            <button id="btnRunHeur" class="btn">Run Heuristics</button>
+            <button id="btnClearHeur" class="btn-ghost">Clear</button>
           </div>
-          <div class="list" id="heuristicResults"></div>
+          <div id="heuristics" style="margin-top:10px"></div>
         </div>
-      </div>
 
-      <!-- Right: Admin Panel -->
+      </main>
+
+      <!-- ADMIN / SIDEBAR -->
       <aside>
         <div class="card">
-          <strong>Admin Panel</strong>
-          <p class="small muted">Protect admin with a password. Admin stores API keys & whitelist in browser (localStorage).</p>
+          <strong>Admin Panel (local)</strong>
+          <p class="small muted">Password protects local settings (stored encrypted in localStorage).</p>
 
-          <label>Admin Password (set / change)</label>
-          <input id="adminPass" placeholder="Set admin password" type="password" />
-          <div class="actions">
-            <button id="btnSetAdmin" class="btn-primary">Set Admin</button>
+          <label>Set / Enter Admin Password</label>
+          <input id="adminPass" type="password" placeholder="admin password" />
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button id="btnSetAdmin" class="btn">Set</button>
             <button id="btnAdminLogin" class="btn-ghost">Login</button>
           </div>
 
           <div id="adminArea" class="hidden" style="margin-top:12px">
-            <label>Save default API keys (encrypted locally)</label>
-            <input id="saveEtherscan" placeholder="Etherscan / Polygonscan key" />
-            <input id="saveCovalent" placeholder="Covalent key" style="margin-top:8px" />
-            <div class="actions" style="margin-top:8px">
-              <button id="btnSaveKeys" class="btn-primary">Save Keys</button>
-              <button id="btnClearKeys" class="btn-ghost">Clear Keys</button>
-            </div>
-
-            <label style="margin-top:10px">Whitelist Addresses (one per line)</label>
-            <textarea id="whitelist" rows="5" placeholder="0x..."></textarea>
-            <div class="actions" style="margin-top:8px">
-              <button id="btnSaveWhite" class="btn-primary">Save Whitelist</button>
+            <label class="small muted">Whitelist addresses (one per line)</label>
+            <textarea id="whitelist" rows="6" placeholder="0x..."></textarea>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="btnSaveWhite" class="btn">Save</button>
               <button id="btnExportWhite" class="btn-ghost">Export</button>
+              <button id="btnClearWhite" class="btn-ghost">Clear</button>
             </div>
 
             <div style="margin-top:12px">
-              <strong>Admin Logs</strong>
+              <label class="small muted">Saved custom tokens</label>
+              <div id="customTokens" class="small muted" style="max-height:120px;overflow:auto"></div>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button id="btnImportTokens" class="btn-ghost">Import (JSON)</button>
+                <button id="btnClearCustomTokens" class="btn-ghost">Clear</button>
+              </div>
+            </div>
+
+            <div style="margin-top:12px">
+              <strong class="small muted">Admin Logs</strong>
               <div class="log" id="adminLog"></div>
             </div>
           </div>
-
         </div>
 
         <div class="card" style="margin-top:12px">
-          <strong>Quick Tips</strong>
-          <ol class="small muted">
-            <li>Provide API keys for better data.</li>
-            <li>Use Testnets for testing (Sepolia).</li>
-            <li>Heuristics only suggest possible eligibility.</li>
-          </ol>
+          <strong>Quick Controls</strong>
+          <div style="margin-top:8px" class="small muted">
+            <div>• Use MetaMask connect to test quickly.</div>
+            <div>• Increase scan depth for older token history (may be slow).</div>
+            <div>• Add custom tokens if discovery misses them.</div>
+          </div>
         </div>
       </aside>
     </div>
 
-    <footer>Made for you — copy the file and modify. Use responsibly. </footer>
+    <footer>Made by you — modify freely. Use responsibly. No centralized APIs. ©</footer>
   </div>
 
   <script>
-  /******************************************************************
-   * Airdrop Tracker & Wallet Analyzer - Single HTML file
-   * - Uses ethers.js (CDN) for RPC calls and ENS resolution
-   * - Optional integration with Covalent & Etherscan if you provide keys
-   * - Admin panel stores keys + whitelist in localStorage (encrypted simply)
+  /*************************************************************************
+   * Live API-free Airdrop Tracker & Wallet Analyzer (single HTML)
+   * - Uses ethers.js to talk to public RPC endpoints (no external APIs)
+   * - Token discovery via Transfer event logs (getLogs)
+   * - Token balances via balanceOf on ERC-20 contracts
+   * - Admin panel stores whitelist and custom tokens encrypted locally
    *
-   * Note: This is a front-end-only tool. For production, move secrets
-   * to a server or secure vault.
-   ******************************************************************/
+   * Notes:
+   * - Scanning large block ranges may be slow or rate-limited by public RPCs.
+   * - For production-scale scanning, run a dedicated node or backend.
+   *************************************************************************/
 
-  // ---------- Utilities ----------
+  // ---------- Helpers ----------
   const $ = id => document.getElementById(id);
   const networks = {
-    ethereum: { name: 'Ethereum', chainId: 1, rpc: 'https://cloudflare-eth.com' , symbol: 'ETH', nativeDecimals:18 },
-    sepolia:  { name: 'Sepolia', chainId: 11155111, rpc: 'https://rpc.sepolia.org' , symbol: 'SEP', nativeDecimals:18 },
-    polygon:  { name: 'Polygon', chainId: 137, rpc: 'https://polygon-rpc.com', symbol: 'MATIC', nativeDecimals:18 }
+    ethereum: { name:'Ethereum', chainId:1, rpc:'https://cloudflare-eth.com', symbol:'ETH' },
+    sepolia:  { name:'Sepolia', chainId:11155111, rpc:'https://rpc.sepolia.org', symbol:'SEP' },
+    polygon:  { name:'Polygon', chainId:137, rpc:'https://polygon-rpc.com', symbol:'MATIC' }
   };
 
-  // Basic local "encryption" for demo (XOR) — NOT secure for real secrets.
-  function simpleEncrypt(text, pass){ 
+  // simple XOR-based encryption for local storage (demo only)
+  function simpleEncrypt(text, pass){
     if(!pass) return text;
-    let out = [];
-    for(let i=0;i<text.length;i++) out.push(text.charCodeAt(i) ^ pass.charCodeAt(i % pass.length));
-    return btoa(String.fromCharCode(...out));
+    const arr = [];
+    for(let i=0;i<text.length;i++) arr.push(text.charCodeAt(i) ^ pass.charCodeAt(i % pass.length));
+    return btoa(String.fromCharCode(...arr));
   }
   function simpleDecrypt(ct, pass){
     if(!pass) return ct;
     try{
       const raw = atob(ct);
-      let out = [];
+      const out = [];
       for(let i=0;i<raw.length;i++) out.push(String.fromCharCode(raw.charCodeAt(i) ^ pass.charCodeAt(i % pass.length)));
       return out.join('');
     }catch(e){ return ''; }
   }
 
-  // Logger
   function logAdmin(msg){
     const el = $('adminLog');
     const ts = new Date().toLocaleString();
     el.innerText = `${ts} - ${msg}\n` + el.innerText;
   }
 
-  // ---------- Admin handling ----------
-  function setAdmin(pass){
-    if(!pass) return alert('Enter admin password');
-    localStorage.setItem('air_admin_pass', pass); // store master pass plain for demo (in production we would hash)
-    $('adminState').innerText = 'Set';
-    logAdmin('Admin password set');
-    showAdminArea(false);
-  }
-
-  function adminLogin(pass){
-    const real = localStorage.getItem('air_admin_pass');
-    if(!real){ alert('Admin not set yet. Set a password first.'); return; }
-    if(pass === real){
-      showAdminArea(true);
-      logAdmin('Admin logged in');
-    } else alert('Wrong admin password');
-  }
-
-  function showAdminArea(show){
-    const area = $('adminArea');
-    if(show){ area.classList.remove('hidden'); }
-    else { area.classList.add('hidden'); }
-  }
-
-  function saveAdminKeys(pass){
-    const eKey = $('saveEtherscan').value.trim();
-    const cKey = $('saveCovalent').value.trim();
-    if(!pass){ alert('Admin password required to save keys'); return; }
-    const enc = simpleEncrypt(JSON.stringify({etherscan:eKey,covalent:cKey}), pass);
-    localStorage.setItem('air_api_keys', enc);
-    logAdmin('Admin API keys saved');
-    alert('Keys saved (encrypted locally)');
-  }
-
-  function loadAdminKeys(pass){
-    try{
-      const enc = localStorage.getItem('air_api_keys');
-      if(!enc) return null;
-      const dec = simpleDecrypt(enc, pass);
-      return JSON.parse(dec);
-    }catch(e){ return null; }
-  }
-
-  function saveWhitelist(pass){
-    if(!pass){ alert('Admin password required'); return; }
-    const txt = $('whitelist').value.trim();
-    const arr = txt.split(/\n+/).map(s=>s.trim()).filter(Boolean);
-    const enc = simpleEncrypt(JSON.stringify(arr), pass);
-    localStorage.setItem('air_whitelist', enc);
-    logAdmin('Whitelist saved ('+arr.length+' addresses)');
-    alert('Whitelist saved');
-  }
-  function exportWhitelist(pass){
-    const enc = localStorage.getItem('air_whitelist');
-    if(!enc){ alert('No whitelist'); return; }
-    const dec = simpleDecrypt(enc, pass);
-    const arr = JSON.parse(dec);
-    const blob = new Blob([arr.join('\n')], {type:'text/plain'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'whitelist.txt'; a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // ---------- App core ----------
+  // ---------- State ----------
   let provider = null;
-  let currentAddress = null;
   let currentNetworkKey = 'ethereum';
+  let currentAddress = null;
+  let discoveredTokens = {}; // tokenAddress -> {name,symbol,decimals,balance}
+  let customTokens = loadCustomTokensFromStorage(); // array of addresses
+  let adminPassCached = null;
 
-  async function getProviderFor(networkKey){
-    const net = networks[networkKey];
-    // Ethers v6 provider from JSON-RPC
-    return new ethers.JsonRpcProvider(net.rpc, net.chainId);
+  // ---------- Provider helpers ----------
+  async function getProviderFor(netKey){
+    if(provider && provider._network && provider._network.chainId === networks[netKey].chainId) return provider;
+    // create a fresh JsonRpcProvider
+    const p = new ethers.JsonRpcProvider(networks[netKey].rpc, networks[netKey].chainId);
+    provider = p;
+    return p;
   }
 
-  // Resolve ENS or address (returns checksum address)
   async function resolveAddress(input, netKey){
     const p = await getProviderFor(netKey);
-    try{
-      if(input.endsWith('.eth') || input.endsWith('.xyz') || input.includes('.')) {
-        const addr = await p.resolveName(input);
-        if(addr) return addr;
+    if(!input || input.trim()===''){
+      // try connected wallet
+      if(window.ethereum){
+        try{
+          const accs = await window.ethereum.request({ method:'eth_requestAccounts' });
+          return ethers.getAddress(accs[0]);
+        }catch(e){ return null; }
       }
-      // try direct address
-      const checksum = ethers.getAddress(input);
-      return checksum;
-    }catch(e){
-      // try lower-case
-      try{ return ethers.getAddress(input.trim()); } catch(ex){ return null; }
+      return null;
     }
+    input = input.trim();
+    if(input.endsWith('.eth') || input.includes('.')) {
+      try{
+        const maybe = await p.resolveName(input);
+        if(maybe) return maybe;
+      }catch(e){}
+    }
+    try{
+      return ethers.getAddress(input);
+    }catch(e){ return null; }
   }
 
   async function fetchNativeBalance(address, netKey){
     const p = await getProviderFor(netKey);
     try{
-      const bal = await p.getBalance(address);
-      const decimals = networks[netKey].nativeDecimals || 18;
-      const formatted = ethers.formatUnits(bal, decimals);
-      return formatted;
-    }catch(e){
-      console.error(e); return null;
-    }
+      const b = await p.getBalance(address);
+      return ethers.formatEther(b);
+    }catch(e){ console.error(e); return null; }
   }
 
-  // Etherscan txs (if key provided)
-  async function fetchTxsEtherscan(address, netKey, apiKey){
-    // chooses correct base API for network
-    let base;
-    if(netKey === 'ethereum') base = 'https://api.etherscan.io/api';
-    else if(netKey === 'sepolia') base = 'https://api-sepolia.etherscan.io/api';
-    else if(netKey === 'polygon') base = 'https://api.polygonscan.com/api';
-    else base = null;
+  // ---------- Token discovery: scan logs ----------
+  // Transfer event signature: keccak256("Transfer(address,address,uint256)")
+  const TRANSFER_TOPIC = ethers.id("Transfer(address,address,uint256)");
 
-    if(!base) return null;
-    if(!apiKey) return null;
-    const url = `${base}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${apiKey}`;
-    const r = await fetch(url);
-    const j = await r.json();
-    if(j.status == "1" && j.result) return j.result;
-    return [];
-  }
-
-  // Covalent balances
-  async function fetchCovalentBalances(address, networkKey, covKey){
-    if(!covKey) return null;
-    const chainId = networks[networkKey].chainId;
-    // Covalent uses numeric chain id, but note: Covalent chain id 1 = ethereum, 137 = polygon
-    const url = `https://api.covalenthq.com/v1/${chainId}/address/${address}/balances_v2/?key=${covKey}`;
-    const r = await fetch(url);
-    const j = await r.json();
-    if(j && j.data && j.data.items) return j.data.items;
-    return [];
-  }
-
-  // UI helpers
-  function setStatus(s){ $('status').innerText = s; }
-  function setOutputAddress(a){ $('outAddress').innerText = a || '—'; }
-  function setENS(n){ $('outENS').innerText = n || '—'; }
-  function setBalance(b){ $('outBalance').innerText = b || '—'; }
-  function setHeu(t){ $('outHeu').innerText = t || '—'; }
-
-  // Render tokens
-  function renderTokens(items){
-    const root = $('tokensList');
-    root.innerHTML = '';
-    if(!items || items.length===0){ root.innerHTML = '<div class="small muted">No token data available. Provide Covalent key for full token balances.</div>'; return; }
-    items.slice(0,200).forEach(tok=>{
-      const d = document.createElement('div');
-      d.className = 'token';
-      const name = tok.contract_name || tok.contract_ticker_symbol || 'Unknown';
-      const symbol = tok.contract_ticker_symbol || '';
-      let balance = '0';
+  // chunked getLogs to avoid huge queries
+  async function discoverTokensByLogs(address, netKey, depthBlocks, onProgress){
+    const p = await getProviderFor(netKey);
+    const latest = await p.getBlockNumber();
+    const fromBlock = Math.max(0, latest - depthBlocks);
+    const chunk = 1500; // blocks per query (tuneable)
+    const tokens = new Set();
+    let queried = 0;
+    for(let start = fromBlock; start <= latest; start += chunk){
+      const end = Math.min(latest, start + chunk - 1);
       try{
-        if(tok.balance && tok.contract_decimals !== null) balance = (Number(tok.balance) / (10 ** tok.contract_decimals)).toString();
-        else if(tok.balance) balance = tok.balance;
-      }catch(e){ balance = tok.balance || '0' }
-      d.innerHTML = `<div><div style="font-weight:600">${name} <span class="small muted">(${symbol})</span></div>
-                     <div class="small muted">${tok.contract_address ? tok.contract_address : ''}</div></div>
-                     <div style="text-align:right"><div class="tag">${balance}</div></div>`;
-      root.appendChild(d);
-    });
-  }
-
-  // Heuristic engine (simple rule-based)
-  function runHeuristicsOn({txs, tokens, native, netKey}){
-    const results = [];
-    // Rule 1: If user interacted with Uniswap/Sushi or popular protocols -> possible eligibility for certain airdrops historically
-    const protocolAddresses = {
-      'uniswap': ['0xE592427A0AEce92De3Edee1F18E0157C05861564'.toLowerCase()], // example: Uniswap V3 router
-      // add addresses if desired
-    };
-    let interactedWithProtocol = [];
-    if(txs && txs.length){
-      for(const t of txs){
-        const to = (t.to || '').toLowerCase();
-        const from = (t.from || '').toLowerCase();
-        if(protocolAddresses.uniswap.includes(to) || protocolAddresses.uniswap.includes(from)) interactedWithProtocol.push('uniswap');
+        // topics: Transfer events where from OR to is the address
+        const topicsFrom = [TRANSFER_TOPIC, ethers.zeroPadValue(ethers.getAddress(address).toLowerCase(),32)]; // not used — ethers getLogs uses topics differently, we'll use two queries
+        // Query for to == address (topic[2])
+        const filterTo = { fromBlock: start, toBlock: end, topics: [TRANSFER_TOPIC, null, ethers.hexZeroPad(address.toLowerCase(),32)] };
+        const logsTo = await p.getLogs(filterTo);
+        for(const l of logsTo) tokens.add(ethers.getAddress(l.address));
+        // Query for from == address (topic[1])
+        const filterFrom = { fromBlock: start, toBlock: end, topics: [TRANSFER_TOPIC, ethers.hexZeroPad(address.toLowerCase(),32)] };
+        const logsFrom = await p.getLogs(filterFrom);
+        for(const l of logsFrom) tokens.add(ethers.getAddress(l.address));
+      }catch(e){
+        // if the provider refuses big range, try smaller chunk
+        try{
+          const mid = Math.floor((start+end)/2);
+          // try two halves
+          const f1 = { fromBlock:start, toBlock:mid, topics:[TRANSFER_TOPIC, null, ethers.hexZeroPad(address.toLowerCase(),32)]};
+          const r1 = await p.getLogs(f1);
+          r1.forEach(l=>tokens.add(ethers.getAddress(l.address)));
+          const f2 = { fromBlock:mid+1, toBlock:end, topics:[TRANSFER_TOPIC, null, ethers.hexZeroPad(address.toLowerCase(),32)]};
+          const r2 = await p.getLogs(f2);
+          r2.forEach(l=>tokens.add(ethers.getAddress(l.address)));
+          const f3 = { fromBlock:start, toBlock:mid, topics:[TRANSFER_TOPIC, ethers.hexZeroPad(address.toLowerCase(),32)]};
+          const r3 = await p.getLogs(f3);
+          r3.forEach(l=>tokens.add(ethers.getAddress(l.address)));
+          const f4 = { fromBlock:mid+1, toBlock:end, topics:[TRANSFER_TOPIC, ethers.hexZeroPad(address.toLowerCase(),32)]};
+          const r4 = await p.getLogs(f4);
+          r4.forEach(l=>tokens.add(ethers.getAddress(l.address)));
+        }catch(err){
+          console.warn('getLogs chunk failed', start, end, err);
+        }
       }
+      queried += (end - start + 1);
+      if(onProgress) onProgress({queried, total: depthBlocks});
+      // small delay to be kinder to public RPCs
+      await new Promise(r=>setTimeout(r, 200));
     }
-    if(interactedWithProtocol.length) results.push({title:'Protocol interaction', details:`Interacted with ${interactedWithProtocol.join(', ')} — may qualify for retro airdrops`});
-
-    // Rule 2: If user holds many small tokens -> potential IDK airdrops (some airdrops go to token holders)
-    if(tokens && tokens.length){
-      const nonZero = tokens.filter(t=> {
-        const bal = Number(t.balance) || 0;
-        return bal > (10 ** (t.contract_decimals ? 0 : 0)); // crude
-      });
-      if(nonZero.length > 3) results.push({title:'Multiple token-holder', details:`Holds ${nonZero.length} tokens — some projects airdrop to token holders.`});
-    }
-
-    // Rule 3: Active wallet with many txs -> snapshot-target for governance airdrops
-    if(txs && txs.length > 20) results.push({title:'Active wallet', details:`${txs.length} recent txs found — active wallets are often eligible for governance/reward airdrops.`});
-
-    // Rule 4: Low activity on Sepolia/testnet -> testnet airdrops less likely
-    if(netKey === 'sepolia') results.push({title:'Testnet detected', details:'Sepolia is a testnet — most mainnet airdrops do not use testnet activity.'});
-
-    // Add some default suggestion
-    if(results.length === 0) results.push({title:'No clear heuristics', details:'No obvious signs of eligibility detected. Consider connecting API keys for deeper scanning.'});
-
-    return results;
+    return Array.from(tokens);
   }
 
-  // Export CSV (simple tokens + native)
-  function exportCSV({address, netKey, nativeBalance, tokens}){
-    let rows = [['address','network','nativeBalance','token','symbol','tokenBalance','contract']];
-    tokens = tokens || [];
-    if(tokens.length === 0) rows.push([address,netKey,nativeBalance,'','','','']);
-    tokens.forEach(t=>{
-      let bal = '0';
-      try{ bal = (Number(t.balance) / (10 ** t.contract_decimals)).toString(); }catch(e){ bal = t.balance || '0'; }
-      rows.push([address,netKey,nativeBalance,t.contract_name || '', t.contract_ticker_symbol || '', bal, t.contract_address || '']);
+  // ERC-20 ABI minimal
+  const ERC20_ABI = [
+    "function name() view returns (string)",
+    "function symbol() view returns (string)",
+    "function decimals() view returns (uint8)",
+    "function balanceOf(address) view returns (uint256)"
+  ];
+
+  async function fetchTokenMetadataAndBalance(tokenAddress, userAddress, netKey){
+    const p = await getProviderFor(netKey);
+    const contract = new ethers.Contract(tokenAddress, ERC20_ABI, p);
+    let name='?', symbol='?', decimals=18, balance='0';
+    try{ name = await contract.name(); }catch(e){ /*ignore*/ }
+    try{ symbol = await contract.symbol(); }catch(e){ /*ignore*/ }
+    try{ decimals = await contract.decimals(); }catch(e){ /*ignore*/ }
+    try{
+      const b = await contract.balanceOf(userAddress);
+      balance = ethers.formatUnits(b, decimals);
+    }catch(e){ console.warn('balanceOf failed', e); }
+    return { tokenAddress, name, symbol, decimals, balance };
+  }
+
+  // ---------- UI rendering ----------
+  function setStatusBasic(addr, ens, netKey, native, activity){
+    $('outAddress').innerText = addr || '—';
+    $('outENS').innerText = ens || '—';
+    $('outNetwork').innerText = networks[netKey].name;
+    $('outNative').innerText = native ? `${native} ${networks[netKey].symbol}` : '—';
+    $('outActivity').innerText = activity || '—';
+  }
+
+  function renderTokensUI(){
+    const root = $('tokensRoot');
+    root.innerHTML = '';
+    const list = Object.values(discoveredTokens);
+    if(list.length===0){
+      root.innerHTML = '<div class="small muted">No tokens discovered yet. Click "Discover Tokens".</div>';
+      return;
+    }
+    // sort: non-zero balances first
+    list.sort((a,b)=> (parseFloat(b.balance)||0) - (parseFloat(a.balance)||0));
+    list.forEach(t=>{
+      const div = document.createElement('div'); div.className='token-row';
+      div.innerHTML = `<div>
+        <div style="font-weight:600">${escapeHtml(t.name||'Unknown')} <span class="small muted">(${escapeHtml(t.symbol||'')})</span></div>
+        <div class="small muted">${t.tokenAddress}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="tag">${t.balance}</div>
+        <div style="margin-top:6px"><button class="btn-ghost" data-token="${t.tokenAddress}">View</button></div>
+      </div>`;
+      root.appendChild(div);
     });
-    const csv = rows.map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], {type:'text/csv'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href=url; a.download = 'airdrop_report.csv'; a.click(); URL.revokeObjectURL(url);
+    // attach handlers to view buttons
+    root.querySelectorAll('button[data-token]').forEach(btn=>{
+      btn.addEventListener('click', async (e)=>{
+        const tok = e.currentTarget.getAttribute('data-token');
+        const info = discoveredTokens[tok];
+        alert(`Token: ${info.name} (${info.symbol})\nContract: ${tok}\nDecimals: ${info.decimals}\nBalance: ${info.balance}`);
+      });
+    });
   }
 
-  // ---------- Event wiring ----------
-  $('btnSetAdmin').addEventListener('click', ()=> setAdmin($('adminPass').value.trim()));
-  $('btnAdminLogin').addEventListener('click', ()=> adminLogin($('adminPass').value.trim()));
-  $('btnSaveKeys').addEventListener('click', ()=> {
-    const pass = $('adminPass').value.trim();
-    saveAdminKeys(pass);
+  // ---------- Actions ----------
+  $('connectWallet').addEventListener('click', async ()=>{
+    if(!window.ethereum){ alert('MetaMask not found. Install or use a compatible wallet.'); return; }
+    try{
+      const accs = await window.ethereum.request({ method:'eth_requestAccounts' });
+      const acc = ethers.getAddress(accs[0]);
+      $('inputAddress').value = acc;
+      alert('Connected: '+acc);
+    }catch(e){ console.error(e); alert('Connect canceled'); }
   });
-  $('btnClearKeys').addEventListener('click', ()=> {
-    if(confirm('Clear saved keys?')){ localStorage.removeItem('air_api_keys'); logAdmin('Cleared API keys'); alert('Keys cleared'); }
-  });
-  $('btnSaveWhite').addEventListener('click', ()=> saveWhitelist($('adminPass').value.trim()));
-  $('btnExportWhite').addEventListener('click', ()=> exportWhitelist($('adminPass').value.trim()));
 
   $('btnAnalyze').addEventListener('click', async ()=>{
     const raw = $('inputAddress').value.trim();
-    const netKey = $('selectNetwork').value;
-    if(!raw) return alert('Enter address or ENS');
-    setStatus('Resolving...');
-    setOutputAddress('—'); setENS('—'); setBalance('—'); setHeu('—'); $('tokensList').innerHTML=''; $('heuristicResults').innerHTML='';
+    currentNetworkKey = $('selectNetwork').value;
+    $('progressText').innerText = 'Resolving address...';
+    const addr = await resolveAddress(raw, currentNetworkKey);
+    if(!addr){ alert('Invalid address / ENS or connection denied.'); return; }
+    currentAddress = addr;
+    // lookup ENS name
+    let ensName = null;
     try{
-      const addr = await resolveAddress(raw, netKey);
-      if(!addr){ setStatus('Invalid address or ENS'); return; }
-      currentAddress = addr; currentNetworkKey = netKey;
-      setOutputAddress(addr);
-      // ENS
-      const p = await getProviderFor(netKey);
-      try{
-        const name = await p.lookupAddress(addr);
-        setENS(name || '—');
-      }catch(e){ setENS('—'); }
-      setStatus('Fetching native balance...');
-      const native = await fetchNativeBalance(addr, netKey);
-      setBalance(`${native} ${networks[netKey].symbol}`);
-      setStatus('Ready');
-      setHeu('Not run');
+      const p = await getProviderFor(currentNetworkKey);
+      ensName = await p.lookupAddress(currentAddress);
+    }catch(e){}
+    const native = await fetchNativeBalance(currentAddress, currentNetworkKey);
+    setStatusBasic(currentAddress, ensName, currentNetworkKey, native, 'Ready');
+    discoveredTokens = {}; renderTokensUI();
+    $('heuristics').innerHTML = '';
+    logAdmin('Analyzed '+currentAddress+' on '+currentNetworkKey);
+  });
+
+  $('btnClear').addEventListener('click', ()=>{
+    $('inputAddress').value=''; currentAddress=null; discoveredTokens={}; renderTokensUI(); $('heuristics').innerHTML=''; setStatusBasic('—','—','ethereum','—','—'); $('progressText').innerText='Waiting...';
+  });
+
+  $('btnDiscover').addEventListener('click', async ()=>{
+    if(!currentAddress){ alert('Analyze an address first (or connect wallet)'); return; }
+    const depth = parseInt($('scanDepth').value) || 10000;
+    $('progressBar').classList.remove('hidden'); $('progressBar').querySelector('i').style.width='0%';
+    $('progressText').innerText = `Scanning last ${depth} blocks for ERC-20 Transfer logs...`;
+    discoveredTokens = {}; renderTokensUI();
+    const onProgress = ({queried, total})=>{
+      const pct = Math.min(100, Math.round((queried/total)*100));
+      $('progressBar').querySelector('i').style.width = pct + '%';
+      $('progressText').innerText = `Scanning... ${pct}% (${queried}/${total} blocks)` ;
+    };
+    try{
+      const found = await discoverTokensByLogs(currentAddress, currentNetworkKey, depth, onProgress);
+      // include custom tokens
+      const merged = new Set(found.concat(customTokens||[]));
+      $('progressText').innerText = `Found ${merged.size} token contract(s). Gathering metadata & balances...`;
+      let i=0;
+      for(const taddr of merged){
+        i++;
+        try{
+          const info = await fetchTokenMetadataAndBalance(taddr, currentAddress, currentNetworkKey);
+          discoveredTokens[taddr] = info;
+        }catch(e){ console.warn('token fetch failed', taddr, e); }
+        // update progress UI
+        const pct = Math.round((i / merged.size) * 100);
+        $('progressBar').querySelector('i').style.width = pct + '%';
+        $('progressText').innerText = `Loading token ${i}/${merged.size} (${pct}%)`;
+        // slight delay to be gentle
+        await new Promise(r=>setTimeout(r, 120));
+      }
+      $('progressBar').classList.add('hidden'); $('progressText').innerText = `Discovery complete. ${Object.keys(discoveredTokens).length} tokens loaded.`;
+      renderTokensUI();
+      logAdmin(`Discover complete: ${Object.keys(discoveredTokens).length} tokens`);
     }catch(e){
       console.error(e);
-      setStatus('Error: '+ (e.message || e));
+      $('progressBar').classList.add('hidden');
+      $('progressText').innerText = 'Scan failed or provider rate-limited. Try smaller depth.';
+      alert('Discovery failed: '+(e.message||e));
+      logAdmin('Discover failed: '+(e.message||e));
     }
   });
 
-  $('btnClear').addEventListener('click', ()=> {
-    $('inputAddress').value=''; $('outAddress').innerText='—'; $('outENS').innerText='—'; $('outBalance').innerText='—'; $('tokensList').innerHTML=''; $('heuristicResults').innerHTML=''; setStatus('Idle');
+  $('btnRefreshBalances').addEventListener('click', async ()=>{
+    if(!currentAddress){ alert('Analyze an address first'); return; }
+    const arr = Object.keys(discoveredTokens);
+    if(arr.length===0){ alert('No discovered tokens; run Discover first.'); return; }
+    $('progressBar').classList.remove('hidden'); $('progressText').innerText = 'Refreshing balances...';
+    let i=0;
+    for(const t of arr){
+      i++;
+      try{
+        const info = await fetchTokenMetadataAndBalance(t, currentAddress, currentNetworkKey);
+        discoveredTokens[t] = info;
+      }catch(e){ console.warn(e); }
+      $('progressBar').querySelector('i').style.width = Math.round((i/arr.length)*100)+'%';
+      $('progressText').innerText = `Refreshing ${i}/${arr.length}`;
+      await new Promise(r=>setTimeout(r,80));
+    }
+    $('progressBar').classList.add('hidden'); $('progressText').innerText = 'Balances refreshed';
+    renderTokensUI();
+    logAdmin('Balances refreshed');
   });
 
-  $('btnFetchTokens').addEventListener('click', async ()=>{
-    if(!currentAddress) return alert('Analyze an address first.');
-    const key = $('covalentKey').value.trim() || (() => {
-      // try admin-stored keys
-      const pass = localStorage.getItem('air_admin_pass');
-      if(pass) {
-        const keys = loadAdminKeys(pass);
-        return keys ? keys.covalent : '';
-      } return '';
-    })();
-    if(!key) {
-      alert('No Covalent key provided. Token fetch requires Covalent API key. Optionally save it in Admin panel.');
-      return;
-    }
-    setStatus('Fetching tokens from Covalent...');
-    const items = await fetchCovalentBalances(currentAddress, currentNetworkKey, key);
-    renderTokens(items);
-    setStatus('Tokens loaded');
-  });
-
-  $('btnTxs').addEventListener('click', async ()=>{
-    if(!currentAddress) return alert('Analyze an address first.');
-    const key = $('etherscanKey').value.trim() || (() => {
-      const pass = localStorage.getItem('air_admin_pass');
-      if(pass){
-        const keys = loadAdminKeys(pass);
-        return keys ? keys.etherscan : '';
-      } return '';
-    })();
-    if(!key){ alert('No Etherscan/Polygonscan API key provided. Please provide it or save in Admin.'); return; }
-    setStatus('Fetching transactions (Etherscan)...');
-    const txs = await fetchTxsEtherscan(currentAddress, currentNetworkKey, key);
-    if(!txs) { setStatus('No TXs (or API error)'); return; }
-    // show tx summary
-    const root = document.createElement('div');
-    root.className = 'list';
-    txs.slice(0,30).forEach(t=>{
-      const d = document.createElement('div'); d.className='token';
-      const time = new Date(t.timeStamp*1000).toLocaleString();
-      d.innerHTML = `<div style="max-width:70%"><div style="font-weight:600">${t.hash}</div><div class="small muted">${t.from} → ${t.to}</div></div><div style="text-align:right"><div class="small muted">${time}</div><div class="tag">${(Number(t.value)/1e18).toFixed(6)}</div></div>`;
-      root.appendChild(d);
-    });
-    $('tokensList').innerHTML=''; $('tokensList').appendChild(root);
-    setStatus('TXs loaded');
-  });
-
-  $('runHeuristics').addEventListener('click', async ()=>{
-    if(!currentAddress) return alert('Analyze an address first.');
-    setStatus('Running heuristics (may use Etherscan/Covalent if keys present)...');
-    // attempt to fetch txs + tokens if keys exist (either input or admin)
-    let txs = [];
-    let tokens = [];
-    // fetch txs if key
-    const ethersKey = $('etherscanKey').value.trim() || (() => {
-      const pass = localStorage.getItem('air_admin_pass'); if(!pass) return '';
-      const keys = loadAdminKeys(pass); return keys ? keys.etherscan : '';
-    })();
-    if(ethersKey){
-      txs = await fetchTxsEtherscan(currentAddress, currentNetworkKey, ethersKey) || [];
-    }
-    const covKey = $('covalentKey').value.trim() || (() => {
-      const pass = localStorage.getItem('air_admin_pass'); if(!pass) return '';
-      const keys = loadAdminKeys(pass); return keys ? keys.covalent : '';
-    })();
-    if(covKey){
-      tokens = await fetchCovalentBalances(currentAddress, currentNetworkKey, covKey) || [];
-      renderTokens(tokens);
-    }
-
-    const native = await fetchNativeBalance(currentAddress, currentNetworkKey);
-    const heur = runHeuristicsOn({txs,tokens,native,netKey:currentNetworkKey});
-    const root = $('heuristicResults'); root.innerHTML='';
+  // Heuristics: simple rule-based signals
+  $('btnRunHeur').addEventListener('click', async ()=>{
+    if(!currentAddress){ alert('Analyze an address first'); return; }
+    const root = $('heuristics'); root.innerHTML = '';
+    root.innerHTML = '<div class="small muted">Running simple heuristics...</div>';
+    // 1. Active wallet (many txs) -> check by scanning last 1000 blocks for any txs involving the address
+    const p = await getProviderFor(currentNetworkKey);
+    const latest = await p.getBlockNumber();
+    const searchBlock = Math.max(0, latest - 1000);
+    let txCount = 0;
+    try{
+      // We'll check logs presence quickly (not full tx history)
+      const logs = await p.getLogs({ fromBlock: searchBlock, toBlock: latest, topics: [null], address: null });
+      // naive: count logs that mention the address as topic or data
+      const addr32 = ethers.hexZeroPad(currentAddress.toLowerCase(),32);
+      for(const l of logs){
+        const s = JSON.stringify(l);
+        if(s.includes(currentAddress.toLowerCase())) txCount++;
+        if(txCount>50) break;
+      }
+    }catch(e){ console.warn('heur tx check failed', e); }
+    const heur = [];
+    if(txCount > 20) heur.push({title:'Active wallet', detail:`${txCount} related logs found in last 1000 blocks — active wallets may be targeted for governance / retro airdrops.`});
+    // token holder signal
+    const tokenCount = Object.values(discoveredTokens).filter(t=> parseFloat(t.balance) > 0 ).length;
+    if(tokenCount > 3) heur.push({title:'Multiple token holder', detail:`Holds ${tokenCount} token(s) with non-zero balances — qualifies for some token-holder airdrops.`});
+    if(Object.keys(discoveredTokens).length === 0) heur.push({title:'No tokens discovered', detail:'No ERC-20 transfers detected in chosen block range. Try increasing scan depth.'});
+    // display
+    root.innerHTML = '';
     heur.forEach(h=>{
-      const d = document.createElement('div'); d.className='token';
-      d.innerHTML = `<div><div style="font-weight:600">${h.title}</div><div class="small muted">${h.details}</div></div><div><div class="tag">Suggest</div></div>`;
+      const d = document.createElement('div'); d.style.marginBottom='8px';
+      d.innerHTML = `<div style="font-weight:600">${h.title}</div><div class="small muted">${h.detail}</div>`;
       root.appendChild(d);
     });
-    setStatus('Heuristics complete');
-    setHeu('Done');
+    logAdmin('Heuristics run');
   });
 
-  $('exportCSV').addEventListener('click', async ()=>{
-    if(!currentAddress) return alert('Analyze an address first.'); 
-    // try to pull tokens if possible
-    const covKey = $('covalentKey').value.trim() || (() => {
-      const pass = localStorage.getItem('air_admin_pass'); if(!pass) return '';
-      const keys = loadAdminKeys(pass); return keys ? keys.covalent : '';
-    })();
-    let tokens = [];
-    if(covKey) tokens = await fetchCovalentBalances(currentAddress, currentNetworkKey, covKey) || [];
-    const native = await fetchNativeBalance(currentAddress, currentNetworkKey);
-    exportCSV({address:currentAddress, netKey: currentNetworkKey, nativeBalance: native, tokens});
+  // CSV / JSON export
+  $('exportCSV').addEventListener('click', ()=>{
+    if(!currentAddress){ alert('Analyze first'); return; }
+    const rows = [['address','network','tokenAddress','tokenName','tokenSymbol','decimals','balance']];
+    for(const taddr in discoveredTokens){
+      const t = discoveredTokens[taddr];
+      rows.push([currentAddress, currentNetworkKey, taddr, t.name||'', t.symbol||'', t.decimals||'', t.balance||'0']);
+    }
+    const csv = rows.map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='airdrop_tokens.csv'; a.click(); URL.revokeObjectURL(url);
+  });
+  $('exportJSON').addEventListener('click', ()=>{
+    if(!currentAddress){ alert('Analyze first'); return; }
+    const out = { address: currentAddress, network: currentNetworkKey, tokens: discoveredTokens, timestamp: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(out,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='airdrop_tokens.json'; a.click(); URL.revokeObjectURL(url);
   });
 
-  // On load: update admin state
+  // Manual token add
+  $('btnAddTokenManual').addEventListener('click', async ()=>{
+    const addr = prompt('Enter token contract address (0x..):');
+    if(!addr) return;
+    try{
+      const tinfo = await fetchTokenMetadataAndBalance(addr, currentAddress || addr, currentNetworkKey);
+      discoveredTokens[ethers.getAddress(addr)] = tinfo;
+      renderTokensUI();
+      logAdmin('Manual token added: '+addr);
+    }catch(e){ alert('Failed to add token: '+(e.message||e)); }
+  });
+
+  // ---------- Admin storage ----------
+  $('btnSetAdmin').addEventListener('click', ()=>{
+    const pass = $('adminPass').value.trim();
+    if(!pass){ alert('Enter password'); return; }
+    localStorage.setItem('air_admin_pass', pass);
+    adminPassCached = pass;
+    $('adminState').innerText = 'Set';
+    alert('Admin set (stored locally for this browser)');
+    logAdmin('Admin password set');
+  });
+
+  $('btnAdminLogin').addEventListener('click', ()=>{
+    const pass = $('adminPass').value.trim();
+    const real = localStorage.getItem('air_admin_pass');
+    if(!real){ alert('Admin not set yet — set it first'); return; }
+    if(pass === real){ adminPassCached = pass; $('adminArea').classList.remove('hidden'); alert('Admin unlocked'); logAdmin('Admin logged in'); loadAdminArea(); }
+    else alert('Wrong password');
+  });
+
+  function saveCustomTokensToStorage(){
+    if(!adminPassCached) return alert('Admin login required');
+    const enc = simpleEncrypt(JSON.stringify(customTokens), adminPassCached);
+    localStorage.setItem('air_custom_tokens', enc);
+    logAdmin('Custom tokens saved ('+customTokens.length+')');
+    loadAdminArea();
+  }
+  function loadCustomTokensFromStorage(){
+    try{
+      const enc = localStorage.getItem('air_custom_tokens');
+      if(!enc) return [];
+      const pass = localStorage.getItem('air_admin_pass');
+      if(!pass) return [];
+      const dec = simpleDecrypt(enc, pass);
+      return JSON.parse(dec) || [];
+    }catch(e){ return []; }
+  }
+  function loadAdminArea(){
+    // whitelist
+    try{
+      const encW = localStorage.getItem('air_whitelist');
+      if(encW && adminPassCached){
+        const dec = simpleDecrypt(encW, adminPassCached);
+        $('whitelist').value = dec;
+      }else $('whitelist').value = '';
+    }catch(e){ $('whitelist').value = ''; }
+    // custom tokens
+    try{
+      const enc = localStorage.getItem('air_custom_tokens');
+      if(enc && adminPassCached){
+        const dec = simpleDecrypt(enc, adminPassCached);
+        const arr = JSON.parse(dec) || [];
+        customTokens = arr;
+      } else customTokens = [];
+    }catch(e){ customTokens = []; }
+    renderCustomTokensUI();
+  }
+  function renderCustomTokensUI(){
+    const el = $('customTokens'); el.innerHTML='';
+    if(customTokens.length===0){ el.innerText = 'No custom tokens'; return; }
+    customTokens.forEach(a=>{
+      const d = document.createElement('div'); d.style.display='flex'; d.style.justifyContent='space-between'; d.style.padding='6px 0';
+      d.innerHTML = `<div style="font-family:monospace">${a}</div><div><button class="btn-ghost" data-addr="${a}">Remove</button></div>`;
+      el.appendChild(d);
+    });
+    el.querySelectorAll('button[data-addr]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const a = b.getAttribute('data-addr');
+        customTokens = customTokens.filter(x=>x.toLowerCase()!==a.toLowerCase());
+        saveCustomTokensToStorage();
+      });
+    });
+  }
+
+  $('btnSaveWhite').addEventListener('click', ()=>{
+    if(!adminPassCached){ alert('Admin login required'); return; }
+    const txt = $('whitelist').value.trim();
+    const enc = simpleEncrypt(txt, adminPassCached);
+    localStorage.setItem('air_whitelist', enc);
+    logAdmin('Whitelist saved');
+    alert('Whitelist saved (encrypted locally)');
+  });
+  $('btnExportWhite').addEventListener('click', ()=>{
+    if(!adminPassCached){ alert('Admin login required'); return; }
+    const enc = localStorage.getItem('air_whitelist');
+    if(!enc) return alert('No whitelist');
+    const dec = simpleDecrypt(enc, adminPassCached);
+    const blob = new Blob([dec], {type:'text/plain'});
+    const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='whitelist.txt'; a.click();
+    logAdmin('Whitelist exported');
+  });
+  $('btnClearWhite').addEventListener('click', ()=>{
+    if(!adminPassCached) return alert('Admin login required');
+    if(confirm('Clear whitelist?')){ localStorage.removeItem('air_whitelist'); $('whitelist').value=''; logAdmin('Whitelist cleared'); }
+  });
+  $('btnImportTokens').addEventListener('click', ()=>{
+    if(!adminPassCached) return alert('Admin login required');
+    const txt = prompt('Paste JSON array of token addresses (["0x..","0x.."]):');
+    try{
+      const arr = JSON.parse(txt || '[]');
+      if(!Array.isArray(arr)) throw new Error('Not array');
+      customTokens = Array.from(new Set((customTokens||[]).concat(arr.map(a=>a.toLowerCase()))));
+      saveCustomTokensToStorage();
+    }catch(e){ alert('Invalid JSON'); }
+  });
+  $('btnClearCustomTokens').addEventListener('click', ()=>{
+    if(!adminPassCached) return alert('Admin login required');
+    if(confirm('Clear custom token list?')){ customTokens=[]; saveCustomTokensToStorage(); }
+  });
+
+  // Save custom tokens automatically on first load if any exist in localStorage
   (function init(){
-    const adminPass = localStorage.getItem('air_admin_pass');
-    $('adminState').innerText = adminPass ? 'Set' : 'Not set';
-    // if admin keys exist, we won't auto-show them
-    const keysEnc = localStorage.getItem('air_api_keys');
-    if(keysEnc) logAdmin('Encrypted API keys found in storage');
+    const pass = localStorage.getItem('air_admin_pass');
+    $('adminState').innerText = pass ? 'Set' : 'Not set';
+    if(pass) adminPassCached = pass;
+    // try loading custom tokens with available pass
+    try{
+      const enc = localStorage.getItem('air_custom_tokens');
+      if(enc && adminPassCached){
+        const dec = simpleDecrypt(enc, adminPassCached);
+        customTokens = JSON.parse(dec) || [];
+      }
+    }catch(e){ customTokens = []; }
+    renderTokensUI();
+    renderCustomTokensUI();
+    if(localStorage.getItem('air_whitelist') && adminPassCached) loadAdminArea();
+    logAdmin('App initialized');
   })();
+
+  // Utility: escape html for display
+  function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
   </script>
 </body>

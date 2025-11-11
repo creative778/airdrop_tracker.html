@@ -4,25 +4,33 @@
   <meta charset="utf-8" />
   <title>Multi-Chain Wallet Analyzer</title>
   <style>
-    /* [Same CSS as before, but with additional styles for multi-chain support] */
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .card { background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+    .btn { background: #4CAF50; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+    .btn-ghost { background: none; color: #4CAF50; border: 1px solid #4CAF50; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    .token-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .progress { height: 4px; background: #4CAF50; width: 0%; transition: width 0.3s; }
+    .hidden { display: none; }
+    .muted { color: #666; }
+    .tag { background: #e0e0e0; padding: 4px 8px; border-radius: 4px; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <h1>Multi-Chain Wallet Analyzer</h1>
-      <div class="small muted">Supports all major EVM networks</div>
+      <div class="muted">Supports Ethereum, BSC, Polygon, Optimism, Arbitrum, and Sepolia</div>
     </header>
 
     <div class="grid-2">
       <main>
         <div class="card">
           <label>Address or ENS</label>
-          <input id="inputAddress" placeholder="0x... or alice.eth (optional)" />
+          <input id="inputAddress" placeholder="0x... or alice.eth" />
           
           <div style="display:flex;gap:8px;margin-top:10px">
             <select id="selectNetwork">
-              <!-- Add all major EVM networks -->
               <option value="ethereum">Ethereum</option>
               <option value="bsc">Binance Smart Chain</option>
               <option value="polygon">Polygon</option>
@@ -45,12 +53,12 @@
         <div class="card" style="margin-top:12px">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <strong>Token Discovery</strong>
-            <div class="small muted">Scan recent logs to find tokens</div>
+            <div class="muted">Scan recent logs to find tokens</div>
           </div>
 
           <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-            <label class="small" style="width:140px">Scan depth (blocks)</label>
-            <input id="scanDepth" type="number" value="5000" style="width:120px" />
+            <label class="muted" style="width:140px">Scan depth (blocks)</label>
+            <input id="scanDepth" type="number" value="500" style="width:120px" />
             <div style="flex:1"></div>
             <div class="inline controls">
               <button id="btnDiscover" class="btn">Discover Tokens</button>
@@ -60,7 +68,7 @@
 
           <div style="margin-top:10px">
             <div class="progress hidden" id="progressBar"><i></i></div>
-            <div class="small muted" id="progressText">Waiting...</div>
+            <div class="muted" id="progressText">Waiting...</div>
           </div>
 
           <div class="tokens" id="tokensRoot"></div>
@@ -80,100 +88,77 @@
           <strong>Networks</strong>
           <div style="margin-top:8px">
             <select id="networkSelector">
-              <!-- Same options as above -->
+              <option value="ethereum">Ethereum</option>
+              <option value="bsc">Binance Smart Chain</option>
+              <option value="polygon">Polygon</option>
+              <option value="optimism">Optimism</option>
+              <option value="arbitrum">Arbitrum</option>
+              <option value="sepolia">Sepolia (Testnet)</option>
             </select>
           </div>
         </div>
       </aside>
     </div>
 
-    <footer>Made by you — modify freely. Use responsibly. ©</footer>
+    <footer>Made by June AI - Use responsibly. © 2025</footer>
   </div>
 
+  <!-- Add required libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.12.1/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.7.6/dist/web3-provider.min.js"></script>
+
   <script>
-    // Network configurations with default API keys
+    // Network configurations with valid RPC endpoints
     const networks = {
       ethereum: { 
         name: 'Ethereum', 
         chainId: 1, 
-        rpc: 'https://mainnet.infura.io/v3/51b4cd51199e4263b0435a4a97ca8971', 
+        rpc: 'https://eth-mainnet.g.alchemy.com/v2/your-alchemy-api-key', 
         symbol: 'ETH',
         explorer: 'https://etherscan.io/address/'
       },
       bsc: { 
         name: 'Binance Smart Chain', 
         chainId: 56, 
-        rpc: 'https://bsc-dataseed.bscscan.com', 
+        rpc: 'https://bsc-mainnet.g.alchemy.com/v2/your-alchemy-api-key', 
         symbol: 'BNB',
         explorer: 'https://bscscan.com/address/'
       },
       polygon: { 
         name: 'Polygon', 
         chainId: 137, 
-        rpc: 'https://polygon-rpc.com', 
+        rpc: 'https://polygon-mainnet.g.alchemy.com/v2/your-alchemy-api-key', 
         symbol: 'MATIC',
         explorer: 'https://polygonscan.com/address/'
       },
       optimism: { 
         name: 'Optimism', 
         chainId: 10, 
-        rpc: 'https://mainnet.optimism.io', 
+        rpc: 'https://opt-mainnet.g.alchemy.com/v2/your-alchemy-api-key', 
         symbol: 'ETH',
         explorer: 'https://optimistic.etherscan.io/address/'
       },
       arbitrum: { 
         name: 'Arbitrum', 
         chainId: 42161, 
-        rpc: 'https://arb1.arbitrum.io/rpc', 
+        rpc: 'https://arb-mainnet.g.alchemy.com/v2/your-alchemy-api-key', 
         symbol: 'ETH',
-        explorer: 'https://arbiscan.com/address/'
+        explorer: 'https://arbiscan.io/address/'
       },
       sepolia: { 
         name: 'Sepolia', 
         chainId: 11155111, 
-        rpc: 'https://rpc.sepolia.org', 
+        rpc: 'https://eth-sepolia.g.alchemy.com/v2/your-alchemy-api-key', 
         symbol: 'ETH',
         explorer: 'https://sepolia.etherscan.io/address/'
       }
     };
 
-    // WalletConnect initialization
-    let walletConnectProvider = null;
-    const projectId = '20636708cdffc0d93dcbae15843dc4d6'; // Replace with your WalletConnect project ID
-
     // Initialize WalletConnect
-    const wcOptions = {
-      projectId,
+    const walletConnect = new Web3Provider({
+      projectId: 'YOUR_WALLETCONNECT_PROJECT_ID', // Replace with your WalletConnect project ID
       chains: [1, 56, 137, 10, 42161, 11155111],
-      optionalChains: [1, 56, 137, 10, 42161, 11155111],
       showQrModal: true
-    };
-
-    const walletConnect = new WalletConnectProvider(wcOptions);
-
-    // Connect MetaMask
-    document.getElementById('connectMetaMask').addEventListener('click', async () => {
-      if (!window.ethereum) {
-        alert('MetaMask not found. Please install MetaMask.');
-        return;
-      }
-      try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        document.getElementById('inputAddress').value = accounts[0];
-      } catch (e) {
-        console.error('MetaMask connection failed:', e);
-      }
-    });
-
-    // Connect WalletConnect
-    document.getElementById('connectWalletConnect').addEventListener('click', async () => {
-      try {
-        await walletConnect.enable();
-        const accounts = await walletConnect.request({ method: 'eth_accounts' });
-        document.getElementById('inputAddress').value = accounts[0];
-      } catch (e) {
-        console.error('WalletConnect failed:', e);
-      }
     });
 
     // Main analysis logic
@@ -190,20 +175,25 @@
     document.getElementById('btnAnalyze').addEventListener('click', async () => {
       const raw = document.getElementById('inputAddress').value.trim();
       currentNetworkKey = document.getElementById('selectNetwork').value;
-      const addr = await resolveAddress(raw, currentNetworkKey);
       
-      if (!addr) {
-        alert('Invalid address/ENS or connection denied');
-        return;
+      try {
+        const addr = await resolveAddress(raw, currentNetworkKey);
+        if (!addr) {
+          alert('Invalid address/ENS or connection denied');
+          return;
+        }
+        
+        currentAddress = addr;
+        const ensName = await lookupENS(addr, currentNetworkKey);
+        const nativeBalance = await fetchNativeBalance(addr, currentNetworkKey);
+        
+        updateStatus(addr, ensName, currentNetworkKey, nativeBalance);
+        discoveredTokens = {};
+        renderTokensUI();
+      } catch (error) {
+        console.error('Analysis failed:', error);
+        alert('Analysis failed. Check console for details.');
       }
-      
-      currentAddress = addr;
-      const ensName = await lookupENS(addr, currentNetworkKey);
-      const nativeBalance = await fetchNativeBalance(addr, currentNetworkKey);
-      
-      updateStatus(addr, ensName, currentNetworkKey, nativeBalance);
-      discoveredTokens = {};
-      renderTokensUI();
     });
 
     // Token discovery
@@ -213,7 +203,7 @@
         return;
       }
       
-      const depth = parseInt(document.getElementById('scanDepth').value) || 5000;
+      const depth = parseInt(document.getElementById('scanDepth').value) || 500;
       document.getElementById('progressText').innerText = `Scanning last ${depth} blocks...`;
       document.getElementById('progressBar').classList.remove('hidden');
       
@@ -240,9 +230,34 @@
       }
     });
 
+    // Connect MetaMask
+    document.getElementById('connectMetaMask').addEventListener('click', async () => {
+      if (!window.ethereum) {
+        alert('MetaMask not found. Please install MetaMask.');
+        return;
+      }
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        document.getElementById('inputAddress').value = accounts[0];
+      } catch (e) {
+        console.error('MetaMask connection failed:', e);
+      }
+    });
+
+    // Connect WalletConnect
+    document.getElementById('connectWalletConnect').addEventListener('click', async () => {
+      try {
+        await walletConnect.enable();
+        const accounts = await walletConnect.request({ method: 'eth_accounts' });
+        document.getElementById('inputAddress').value = accounts[0];
+      } catch (e) {
+        console.error('WalletConnect failed:', e);
+      }
+    });
+
     // Helper functions
     async function resolveAddress(input, netKey) {
-      const provider = new ethers.JsonRpcProvider(networks[netKey].rpc, networks[netKey].chainId);
+      const provider = new ethers.BrowserProvider(window.ethereum || networks[netKey].rpc);
       
       if (!input) {
         if (window.ethereum) {
@@ -268,7 +283,7 @@
     }
 
     async function lookupENS(address, netKey) {
-      const provider = new ethers.JsonRpcProvider(networks[netKey].rpc, networks[netKey].chainId);
+      const provider = new ethers.BrowserProvider(window.ethereum || networks[netKey].rpc);
       try {
         return await provider.lookupAddress(address);
       } catch (e) {
@@ -277,7 +292,7 @@
     }
 
     async function fetchNativeBalance(address, netKey) {
-      const provider = new ethers.JsonRpcProvider(networks[netKey].rpc, networks[netKey].chainId);
+      const provider = new ethers.BrowserProvider(window.ethereum || networks[netKey].rpc);
       try {
         const balance = await provider.getBalance(address);
         return ethers.formatEther(balance);
@@ -288,7 +303,7 @@
     }
 
     async function discoverTokensByLogs(address, netKey, depth) {
-      const provider = new ethers.JsonRpcProvider(networks[netKey].rpc, networks[netKey].chainId);
+      const provider = new ethers.BrowserProvider(window.ethereum || networks[netKey].rpc);
       const latest = await provider.getBlockNumber();
       const fromBlock = Math.max(0, latest - depth);
       
@@ -327,7 +342,7 @@
     }
 
     async function fetchTokenMetadata(tokenAddress, userAddress, netKey) {
-      const provider = new ethers.JsonRpcProvider(networks[netKey].rpc, networks[netKey].chainId);
+      const provider = new ethers.BrowserProvider(window.ethereum || networks[netKey].rpc);
       const contract = new ethers.Contract(tokenAddress, [
         "function name() view returns (string)",
         "function symbol() view returns (string)",
@@ -366,7 +381,7 @@
       root.innerHTML = '';
       
       if (Object.keys(discoveredTokens).length === 0) {
-        root.innerHTML = '<div class="small muted">No tokens found. Try increasing scan depth.</div>';
+        root.innerHTML = '<div class="muted">No tokens found. Try increasing scan depth.</div>';
         return;
       }
       
@@ -380,7 +395,7 @@
         div.innerHTML = `
           <div>
             <div style="font-weight:600">${token.name} (${token.symbol})</div>
-            <div class="small muted">${token.address}</div>
+            <div class="muted">${token.address}</div>
           </div>
           <div style="text-align:right">
             <div class="tag">${token.balance}</div>
